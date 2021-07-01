@@ -6,12 +6,12 @@ program BethGame;
 
 uses
   System.SysUtils,
-  wbGameMode in 'wbGameMode.pas' {/ wbModeSkyrimSpecialEdition in 'wbModeSkyrimSpecialEdition.pas';},
+  wbGameMode in 'wbGameMode.pas',
   wbGameModeTES3 in 'wbGameModeTES3.pas',
   wbGameModeTES5 in 'wbGameModeTES5.pas';
 
 var
-  iter: TwbGameModeClass;
+  iter: TwbGameMode.TwbGameModeClass;
 
 begin
   try
@@ -20,7 +20,7 @@ begin
     // TwbGameModeTES4.Register;
     // TwbGameModeTES5.Register;
     TwbGameModeSSE.Register;
-    // TwbGameModeTES5VR.Register;
+    // TwbGameModeSSEVR.Register;
     // TwbGameModeEnderal.Register;
     TwbGameModeEnderalSE.Register;
     // TwbGameModeFO3.Register;
@@ -35,12 +35,34 @@ begin
 
     for iter in TwbGameMode.List do begin
       with iter.Create do try
-        Writeln('AppName     : ' + GetAppName);
-        Writeln('GameName    : ' + GetGameName);
-        Writeln('GamePath    : ' + GetGamePath);
-        Writeln('DataPath    : ' + GetDataPath);
-        Writeln('AppDataPath : ' + GetAppDataPath);
-        Writeln('MyGamesPath : ' + GetMyGamesPath);
+        Writeln('ToolName     : ' + GetToolName);
+        Writeln('GameName     : ' + GetGameName);
+        Writeln('GameType     : ' + GetGameTypeString);
+        Writeln('GamePath     : ' + GetGamePath);
+        Writeln('DataPath     : ' + GetDataPath);
+        Writeln('MasterFile   : ' + GetMasterName);
+        Writeln('Executable   : ' + GetExecutableName);
+        Writeln('AppDataPath  : ' + GetAppDataPath);
+        Writeln('PluginsPath  : ' + GetPluginsPath);
+        Writeln('MyGamesPath  : ' + GetMyGamesPath);
+
+        // Test GetIniSetting
+        Writeln('IniFile[0]   : ' + GetIniFiles[0]);
+        case GetGameType of
+          gmTES3: begin
+            Writeln('string       : ' + GetIniSetting('General', 'Screen Shot Base Name'));
+            Writeln('integer      : ' + GetIniSetting('General', 'Subtitles'));
+            Writeln('float        : ' + GetIniSetting('General', 'PC Footstep Volume'));
+          end;
+
+          gmSSE, gmSSEVR: begin
+            Writeln('string       : ' + GetIniSetting('General', 'sLanguage'));
+            Writeln('integer      : ' + GetIniSetting('Papyrus', 'bEnableTrace'));
+            Writeln('uinteger     : ' + GetIniSetting('Decals', 'uMaxSkinDecalPerActor'));
+            Writeln('float        : ' + GetIniSetting('LightingShader', 'fDecalLODFadeStart'));
+          end;
+        end;
+
         Writeln;
       finally
         Free;

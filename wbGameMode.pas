@@ -5,6 +5,7 @@ interface
 uses
   Classes,
   Generics.Collections,
+  IniFiles,
   IOUtils,
   Registry,
   ShlObj,
@@ -12,25 +13,36 @@ uses
   Windows;
 
 type
-  TwbGameModeClass = class of TwbGameMode;
+  TwbGameType = (gmTES3, gmTES4, gmFO3, gmFNV, gmTES5, gmFO4, gmFO4VR, gmSSE, gmSSEVR, gmFO76);
+  TStringArray = array of string;
+
   TwbGameMode = class
     public
       class procedure InitList;
       class procedure Register;
 
+      type TwbGameModeClass = class of TwbGameMode;
       class var List: TList<TwbGameModeClass>;
 
-      function GetAppName(): string;          virtual; abstract;
-      function GetGameName(): string;         virtual; abstract;
-      function GetGamePath(): string;         virtual; abstract;
-      function GetDataFolderName(): string;   virtual; abstract;
-      function GetDataPath(): string;         virtual; abstract;
-      function GetAppDataPath(): string;      virtual; abstract;
-      function GetMyGamesPath(): string;      virtual; abstract;
+      function GetToolName(): string;                                                                       virtual; abstract;
+      function GetGameName(): string;                                                                       virtual; abstract;
+      function GetGameType(): TwbGameType;                                                                  virtual; abstract;
+      function GetGameTypeString(): string;                                                                 virtual; final;
+      function GetGamePath(): string;                                                                       virtual; abstract;
+      function GetDataFolderName(): string;                                                                 virtual; abstract;
+      function GetDataPath(): string;                                                                       virtual; abstract;
+      function GetMasterName(): string;                                                                     virtual; abstract;
+      function GetExecutableName(): string;                                                                 virtual; abstract;
+      function GetAppDataPath(): string;                                                                    virtual; abstract;
+      function GetPluginsPath(): string;                                                                    virtual; abstract;
+      function GetMyGamesPath(): string;                                                                    virtual; abstract;
+      function GetIniFiles(): TStringArray;                                                                 virtual; abstract;
+      function GetIniSetting(const a_section, a_ident: string; const a_default: string = ''): string;       virtual; abstract;
+      function TryGetIniSetting(const a_section, a_ident: string; const a_default: string = ''): string;    virtual; final;
 
     protected
       class function GetRegKeys(const a_path: string; const a_HKEY: cardinal = HKEY_LOCAL_MACHINE): TStringList;
-      class function GetRegValue(const a_path: string; const a_key: string; const a_HKEY: cardinal = HKEY_LOCAL_MACHINE): string;
+      class function GetRegValue(const a_path, a_key: string; const a_HKEY: cardinal = HKEY_LOCAL_MACHINE): string;
       class function GetMSStorePath(const a_packageName: string): string;
       class function GetMSStoreLanguage(): string;
       class function GetCSIDLShellFolder(const a_CSIDLFolder: integer): string;
@@ -40,9 +52,9 @@ type
       var GamePath: string;
       var DataPath: string;
       var AppDataPath: string;
+      var PluginsFilePath: string;
       var MyGamesPath: string;
-
-      var IsMicrosoftStore: boolean;
+      var IsMSStore: boolean;
   end;
 
 implementation
@@ -158,5 +170,39 @@ implementation
   class function TwbGameMode.GetMyDocumentsPath;
   begin
     Result := GetCSIDLShellFolder(CSIDL_PERSONAL);
+  end;
+
+  function TwbGameMode.GetGameTypeString: string;
+  begin
+    case GetGameType of
+      gmTES3  : Result := 'gmTES3';
+      gmTES4  : Result := 'gmTES4';
+      gmFO3   : Result := 'gmFO3';
+      gmFNV   : Result := 'gmFNV';
+      gmTES5  : Result := 'gmTES5';
+      gmFO4   : Result := 'gmFO4';
+      gmFO4VR : Result := 'gmFO4VR';
+      gmSSE   : Result := 'gmSSE';
+      gmSSEVR : Result := 'gmSSEVR';
+      gmFO76  : Result := 'gmFO76';
+    end;
+  end;
+  
+  function TwbGameMode.TryGetIniSetting;
+  var
+    fileName, filePath: string;
+  begin
+    Result := a_default;
+    for fileName in GetIniFiles do begin
+      filePath := TPath.Combine(GetMyGamesPath, fileName);
+      with TMemIniFile.Create(filePath) do try
+        if ValueExists(a_section, a_ident) then begin
+          Result := ReadString(a_section, a_ident, a_default);
+          exit;
+        end;
+      finally
+        Free;
+      end;
+    end;
   end;
 end.
